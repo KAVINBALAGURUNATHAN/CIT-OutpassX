@@ -1,0 +1,135 @@
+<!DOCTYPE html>
+<html>
+<head>
+  <title>Parent Dashboard</title>
+  <style>
+    body {
+      font-family: Arial, sans-serif;
+      padding: 20px;
+      background: #f4f6f9;
+    }
+    h2, h3 {
+      color: #1b2a49;
+    }
+    table {
+      border-collapse: collapse;
+      width: 100%;
+      margin-top: 20px;
+      background: #fff;
+      border-radius: 5px;
+      overflow: hidden;
+      box-shadow: 0 2px 5px rgba(0,0,0,0.1);
+    }
+    th, td {
+      border-bottom: 1px solid #ddd;
+      padding: 12px;
+      text-align: center;
+    }
+    th {
+      background: #e8edf3;
+      font-weight: bold;
+    }
+    tr:hover { background-color: #f1f1f1; }
+    button {
+      padding: 6px 12px;
+      margin: 2px;
+      border: none;
+      border-radius: 4px;
+      cursor: pointer;
+    }
+    .approve { background: #28a745; color: #fff; }
+    .reject { background: #dc3545; color: #fff; }
+    .empty {
+      text-align: center;
+      color: #777;
+      font-style: italic;
+    }
+  </style>
+</head>
+<body>
+
+<h2>Parent Dashboard</h2>
+<h3>Child Outpass Requests</h3>
+
+<table id="requests_table">
+  <thead>
+    <tr>
+      <th>ID</th>
+      <th>Student</th>
+      <th>Date From</th>
+      <th>Date To</th>
+      <th>Reason</th>
+      <th>Status</th>
+      <th>Action</th>
+    </tr>
+  </thead>
+  <tbody>
+    <tr>
+      <td colspan="7" class="empty">Loading requests...</td>
+    </tr>
+  </tbody>
+</table>
+
+<script>
+const email = new URLSearchParams(window.location.search).get('email');
+
+async function fetchRequests() {
+  try {
+    const res = await fetch(`http://localhost:3000/parent/requests?email=${email}`);
+    const data = await res.json();
+    const tbody = document.querySelector('#requests_table tbody');
+    tbody.innerHTML = '';
+
+    if (!data.length) {
+      tbody.innerHTML = `<tr><td colspan="7" class="empty">No requests found</td></tr>`;
+      return;
+    }
+
+    data.forEach(r => {
+      const tr = document.createElement('tr');
+      tr.innerHTML = `
+        <td>${r.id}</td>
+        <td>${r.student_name}</td>
+        <td>${r.date_from}</td>
+        <td>${r.date_to}</td>
+        <td>${r.reason}</td>
+        <td>${r.parent_approval || 'Pending'}</td>
+        <td>
+          <button class="approve" onclick="approve(${r.id}, true)">Approve</button>
+          <button class="reject" onclick="approve(${r.id}, false)">Reject</button>
+        </td>
+      `;
+      tbody.appendChild(tr);
+    });
+  } catch (err) {
+    console.error('Error fetching requests:', err);
+    const tbody = document.querySelector('#requests_table tbody');
+    tbody.innerHTML = `<tr><td colspan="7" class="empty">Error loading requests</td></tr>`;
+  }
+}
+
+async function approve(id, approve) {
+  const otp = prompt('Enter OTP sent to your email:');
+  if (!otp) return;
+
+  try {
+    const res = await fetch(`http://localhost:3000/parent/requests/${id}`, {
+      method: 'PUT',
+      headers: {'Content-Type': 'application/json'},
+      body: JSON.stringify({ approve, otp })
+    });
+    const data = await res.json();
+    alert(data.message);
+    fetchRequests();
+  } catch (err) {
+    alert('Error processing request');
+    console.error(err);
+  }
+}
+
+fetchRequests();
+</script>
+
+</body>
+</html>
+

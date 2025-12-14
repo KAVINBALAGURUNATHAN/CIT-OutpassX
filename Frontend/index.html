@@ -1,0 +1,130 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8">
+<title>OutpassX Login</title>
+<style>
+  body {
+    font-family: Arial, sans-serif;
+    background: #f4f6f9;
+    display: flex;
+    justify-content: center;
+    align-items: center;
+    height: 100vh;
+    margin: 0;
+  }
+  .login-box {
+    background: #fff;
+    padding: 30px;
+    border-radius: 10px;
+    box-shadow: 0 0 10px rgba(0,0,0,0.1);
+    width: 350px;
+  }
+  h2 { text-align: center; margin-bottom: 20px; color: #1b2a49; }
+  select, input, button {
+    width: 100%;
+    padding: 10px;
+    margin: 10px 0;
+    border-radius: 5px;
+    border: 1px solid #ccc;
+    font-size: 14px;
+  }
+  button {
+    background-color: #0d6efd;
+    color: #fff;
+    border: none;
+    cursor: pointer;
+  }
+  button:hover { background-color: #0b5ed7; }
+  #message { text-align:center; margin-top:10px; color:red; font-weight:bold; }
+</style>
+</head>
+<body>
+
+<div class="login-box">
+  <h2>OutpassX Login</h2>
+
+  <select id="role">
+    <option value="student">Student</option>
+    <option value="parent">Parent</option>
+    <option value="advisor">Advisor</option>
+    <option value="hod">HOD</option>
+    <option value="floor">Floor Incharge</option>
+  </select>
+
+  <input type="email" id="email" placeholder="Enter your email" required>
+  <button onclick="sendOtp()">Send OTP</button>
+
+  <input type="text" id="otp" placeholder="Enter OTP" disabled>
+  <button onclick="verifyOtp()">Verify OTP</button>
+
+  <p id="message"></p>
+</div>
+
+<script>
+const messageEl = document.getElementById('message');
+
+function showMessage(msg, color='red') {
+  messageEl.textContent = msg;
+  messageEl.style.color = color;
+}
+
+async function sendOtp() {
+  const email = document.getElementById('email').value.trim();
+  const role = document.getElementById('role').value;
+
+  if (!email) { showMessage('Please enter your email'); return; }
+
+  try {
+    const res = await fetch('http://localhost:3000/auth/send-otp', {
+      method: 'POST',
+      headers: {'Content-Type':'application/json'},
+      body: JSON.stringify({ email, role })
+    });
+    const data = await res.json();
+    if(data.success){
+      showMessage('OTP sent to your email', 'green');
+      const otpInput = document.getElementById('otp');
+      otpInput.disabled = false;
+      otpInput.focus();
+    } else {
+      showMessage('Failed: ' + data.message);
+    }
+  } catch(err) {
+    showMessage('Error sending OTP: ' + err.message);
+  }
+}
+
+async function verifyOtp() {
+  const email = document.getElementById('email').value.trim();
+  const otp = document.getElementById('otp').value.trim();
+  const role = document.getElementById('role').value;
+
+  if (!otp) { showMessage('Please enter the OTP'); return; }
+
+  try {
+    const res = await fetch('http://localhost:3000/auth/verify-otp', {
+      method: 'POST',
+      headers: {'Content-Type':'application/json'},
+      body: JSON.stringify({ email, otp, role })
+    });
+    const data = await res.json();
+    if(data.success){
+      // Redirect to the respective dashboard
+      const dashboard = role === 'student' ? 'dashboard_student.html' :
+                        role === 'parent' ? 'dashboard_parent.html' :
+                        role === 'advisor' ? 'dashboard_advisor.html' :
+                        role === 'hod' ? 'dashboard_hod.html' :
+                        'dashboard_floor.html';
+      window.location.href = `${dashboard}?email=${encodeURIComponent(email)}`;
+    } else {
+      showMessage('Invalid OTP');
+    }
+  } catch(err) {
+    showMessage('Error verifying OTP: ' + err.message);
+  }
+}
+</script>
+
+</body>
+</html>
