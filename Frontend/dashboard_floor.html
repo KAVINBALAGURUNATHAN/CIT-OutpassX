@@ -1,0 +1,162 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8">
+  <title>Floor Incharge Dashboard</title>
+  <style>
+    body {
+      font-family: Arial, sans-serif;
+      background: #f4f6f9;
+      padding: 30px;
+    }
+    h2 {
+      color: #1b2a49;
+      margin-bottom: 25px;
+    }
+    table {
+      width: 100%;
+      border-collapse: collapse;
+      margin-bottom: 30px; /* space between table and bulk approve */
+    }
+    th, td {
+      padding: 12px;
+      border: 1px solid #ccc;
+      text-align: center;
+    }
+    th {
+      background: #e8edf3;
+      color: #1b2a49;
+    }
+    button {
+      padding: 8px 15px;
+      margin: 0 5px;
+      border: none;
+      border-radius: 5px;
+      cursor: pointer;
+      font-weight: 500;
+      transition: background 0.3s, transform 0.2s;
+    }
+    .approve { background: #28a745; color: #fff; }
+    .approve:hover { background: #218838; transform: translateY(-1px); }
+    .reject { background: #dc3545; color: #fff; }
+    .reject:hover { background: #c82333; transform: translateY(-1px); }
+
+    #bulkApprove {
+      display: block;
+      background: #007bff;
+      color: #fff;
+      padding: 12px 20px;
+      font-size: 16px;
+      border-radius: 6px;
+      cursor: pointer;
+      margin-top: 10px; /* space from table */
+      transition: background 0.3s, transform 0.2s;
+    }
+    #bulkApprove:hover {
+      background: #0062cc;
+      transform: translateY(-2px);
+    }
+    .empty-row td {
+      color: #777;
+      font-style: italic;
+    }
+  </style>
+</head>
+<body>
+  <h2>Floor Incharge Dashboard</h2>
+
+  <table id="outpassTable">
+    <thead>
+      <tr>
+        <th>Student</th>
+        <th>Register No</th>
+        <th>Hostel & Floor</th>
+        <th>Date From</th>
+        <th>Date To</th>
+        <th>Reason</th>
+        <th>HOD Approval</th>
+        <th>Action</th>
+      </tr>
+    </thead>
+    <tbody>
+      <tr class="empty-row">
+        <td colspan="8">No outpass requests yet.</td>
+      </tr>
+    </tbody>
+  </table>
+
+  <button id="bulkApprove">Bulk Approve All</button>
+
+  <script>
+    const floorInchargeEmail = localStorage.getItem('floor_incharge_email');
+
+    async function loadRequests() {
+      try {
+        const res = await fetch(`http://localhost:3000/floor-incharge/requests?email=${floorInchargeEmail}`);
+        const requests = await res.json();
+        const tbody = document.querySelector("#outpassTable tbody");
+        tbody.innerHTML = '';
+
+        if(requests.length === 0) {
+          tbody.innerHTML = `<tr class="empty-row"><td colspan="8">No requests available</td></tr>`;
+          return;
+        }
+
+        requests.forEach(req => {
+          const tr = document.createElement('tr');
+          tr.innerHTML = `
+            <td>${req.student_name}</td>
+            <td>${req.register_no}</td>
+            <td>${req.hostel} - Floor ${req.floor}</td>
+            <td>${req.date_from}</td>
+            <td>${req.date_to}</td>
+            <td>${req.reason}</td>
+            <td>${req.hod_approval ? 'Approved' : 'Pending'}</td>
+            <td>
+              <button class="approve" onclick="updateRequest(${req.id}, true)" ${!req.hod_approval ? 'disabled' : ''}>Approve</button>
+              <button class="reject" onclick="updateRequest(${req.id}, false)" ${!req.hod_approval ? 'disabled' : ''}>Reject</button>
+            </td>
+          `;
+          tbody.appendChild(tr);
+        });
+      } catch(err) {
+        alert('Failed to load requests: ' + err.message);
+      }
+    }
+
+    async function updateRequest(id, approve) {
+      try {
+        const res = await fetch(`http://localhost:3000/floor-incharge/requests/${id}`, {
+          method: 'PUT',
+          headers: { 'Content-Type': 'application/json' },
+          body: JSON.stringify({ approve })
+        });
+        const data = await res.json();
+        if(data.success) {
+          alert('Request updated successfully!');
+          loadRequests();
+        } else {
+          alert('Failed to update request');
+        }
+      } catch(err) {
+        alert('Error: ' + err.message);
+      }
+    }
+
+    document.getElementById('bulkApprove').addEventListener('click', async () => {
+      try {
+        const res = await fetch(`http://localhost:3000/floor-incharge/bulk-approve?email=${floorInchargeEmail}`, { method: 'PUT' });
+        const data = await res.json();
+        if(data.success) {
+          alert('All requests approved!');
+          loadRequests();
+        }
+      } catch(err) {
+        alert('Bulk approve failed: ' + err.message);
+      }
+    });
+
+    loadRequests();
+  </script>
+</body>
+</html>
