@@ -1,0 +1,97 @@
+<!DOCTYPE html>
+<html>
+<head>
+  <title>Student Dashboard</title>
+  <style>
+    body { font-family: Arial; padding:20px; background:#f4f6f9; }
+    table { border-collapse: collapse; width: 100%; margin-top: 20px; }
+    th, td { border: 1px solid #ccc; padding: 10px; text-align: left; }
+    input, button { padding: 5px; margin-top: 5px; width: 100%; }
+    .form-box { background:#fff; padding:20px; border-radius:10px; max-width:400px; margin-bottom:20px; }
+  </style>
+</head>
+<body>
+  <h2>Student Dashboard</h2>
+  <div class="form-box">
+    <h3>Submit Outpass Request</h3>
+    <input type="date" id="date_from">
+    <input type="date" id="date_to">
+    <input type="text" id="reason" placeholder="Reason">
+    <button onclick="submitOutpass()">Submit</button>
+  </div>
+
+  <h3>Your Outpass Requests</h3>
+  <table id="outpass_table">
+    <thead>
+      <tr>
+        <th>ID</th>
+        <th>Date From</th>
+        <th>Date To</th>
+        <th>Reason</th>
+        <th>Status</th>
+        <th>Parent Approval</th>
+        <th>Advisor Approval</th>
+        <th>HOD Approval</th>
+        <th>Floor Approval</th>
+      </tr>
+    </thead>
+    <tbody></tbody>
+  </table>
+
+<script>
+const email = new URLSearchParams(window.location.search).get('email');
+if(!email){
+  alert('Student email missing in URL!');
+}
+
+// Fetch all outpasses
+async function fetchOutpasses() {
+  const res = await fetch(`http://localhost:3000/student/outpasses?email=${email}`);
+  const data = await res.json();
+  if(!data.success) return;
+  const tbody = document.querySelector('#outpass_table tbody');
+  tbody.innerHTML = '';
+  data.data.forEach(o => {
+    tbody.innerHTML += `
+      <tr>
+        <td>${o.id}</td>
+        <td>${o.date_from}</td>
+        <td>${o.date_to}</td>
+        <td>${o.reason}</td>
+        <td>${o.status}</td>
+        <td>${o.parent_approval ? 'Yes' : 'No'}</td>
+        <td>${o.advisor_approval ? 'Yes' : 'No'}</td>
+        <td>${o.hod_approval ? 'Yes' : 'No'}</td>
+        <td>${o.floor_incharge_approval ? 'Yes' : 'No'}</td>
+      </tr>
+    `;
+  });
+}
+
+// Submit outpass
+async function submitOutpass() {
+  const date_from = document.getElementById('date_from').value;
+  const date_to = document.getElementById('date_to').value;
+  const reason = document.getElementById('reason').value;
+
+  if(!date_from || !date_to || !reason){
+    alert('All fields are required!');
+    return;
+  }
+
+  const res = await fetch('http://localhost:3000/student/request-outpass',{
+    method:'POST',
+    headers:{'Content-Type':'application/json'},
+    body: JSON.stringify({email, date_from, date_to, reason})
+  });
+
+  const data = await res.json();
+  alert(data.message);
+  fetchOutpasses();
+}
+
+// Initial load
+fetchOutpasses();
+</script>
+</body>
+</html>
