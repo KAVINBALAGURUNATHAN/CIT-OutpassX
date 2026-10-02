@@ -12,7 +12,7 @@ A hostel outpass management system with a multi-level approval workflow: **Stude
 - HOD and floor in-charge can bulk-approve requests
 
 ## Tech stack
-- **Backend:** Node.js, Express, MySQL (`mysql2`), Nodemailer (Gmail SMTP)
+- **Backend:** Node.js, Express, MySQL (`mysql2`), Nodemailer (Gmail SMTP) / Brevo API
 - **Frontend:** HTML, CSS and JavaScript (one dashboard per role)
 
 ## Project structure
@@ -29,9 +29,21 @@ Frontend/
 
 ## Running locally
 ```bash
+mysql -u root -p -e "CREATE DATABASE cit_outpassx"
+mysql -u root -p cit_outpassx < Backend/sql/schema.sql
+mysql -u root -p cit_outpassx < Backend/sql/seed.sql   # optional demo users
+
 cd Backend
 cp .env.example .env   # fill in MySQL + Gmail app password
 npm install
-node server.js         # http://localhost:3000
+npm start              # http://localhost:3000
 ```
 Then open `Frontend/index.html` in a browser.
+
+## Deployment
+- **Frontend:** Vercel, static, with `Frontend/` as the root directory
+- **Backend:** Render web service (`render.yaml`, root `Backend/`)
+- **Database:** Aiven MySQL (set `DB_CA_CERT` for TLS)
+- **Email:** Brevo HTTP API (`BREVO_API_KEY`), because Render's free tier blocks SMTP
+
+The production API URL is set in `Frontend/config.js`.
