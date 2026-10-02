@@ -1,6 +1,6 @@
 services:
   - type: web
-    name: cit-outpassx-api
+    name: cit-outpassx
     runtime: node
     plan: free
     rootDir: Backend
