@@ -70,7 +70,7 @@ router.post('/request-outpass', async (req, res) => {
 
   try {
     // Get student and their parent_id
-    const [students] = await pool.query(`SELECT id, parent_id FROM students WHERE email = ?`, [email]);
+    const [students] = await pool.query(`SELECT id, parent_id, advisor_id FROM students WHERE email = ?`, [email]);
     if (!students.length) return res.status(404).json({ success: false, message: 'Student not found' });
 
     const student = students[0];
@@ -80,9 +80,9 @@ router.post('/request-outpass', async (req, res) => {
 
     // Insert outpass
     await pool.query(
-      `INSERT INTO outpasses (student_id, parent_id, date_from, date_to, reason, status, otp) 
-       VALUES (?, ?, ?, ?, ?, 'PENDING_PARENT', ?)`,
-      [student.id, student.parent_id, date_from, date_to, reason, otp]
+      `INSERT INTO outpasses (student_id, parent_id, advisor_id, date_from, date_to, reason, status, otp) 
+       VALUES (?, ?, ?, ?, ?, ?, 'PENDING_PARENT', ?)`,
+      [student.id, student.parent_id, student.advisor_id, date_from, date_to, reason, otp]
     );
 
     // Get parent email to send OTP

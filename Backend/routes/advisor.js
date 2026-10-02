@@ -13,7 +13,7 @@ router.get('/requests', async (req, res) => {
     const advisorId = advisor[0].id;
 
     const [requests] = await pool.query(
-      `SELECT o.*, s.name AS student_name FROM outpasses o JOIN students s ON o.student_id = s.id WHERE o.advisor_id = ? ORDER BY created_at DESC`,
+      `SELECT o.*, s.name AS student_name FROM outpasses o JOIN students s ON o.student_id = s.id WHERE o.advisor_id = ? AND o.parent_approval = 1 ORDER BY o.created_at DESC`,
       [advisorId]
     );
 
@@ -33,7 +33,7 @@ router.put('/requests/:id', async (req, res) => {
   try {
     await pool.query(
       `UPDATE outpasses SET advisor_approval = ?, status = ? WHERE id = ?`,
-      [approve ? 1 : 0, approve ? 'Pending HOD' : 'Rejected by Advisor', id]
+      [approve ? 1 : 0, approve ? 'PENDING_HOD' : 'REJECTED_BY_ADVISOR', id]
     );
 
     res.json({ success: true, message: approve ? 'Approved' : 'Rejected' });

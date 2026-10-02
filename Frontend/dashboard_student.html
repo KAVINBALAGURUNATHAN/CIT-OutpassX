@@ -38,6 +38,7 @@
     <tbody></tbody>
   </table>
 
+<script src="config.js"></script>
 <script>
 const email = new URLSearchParams(window.location.search).get('email');
 if(!email){
@@ -46,7 +47,7 @@ if(!email){
 
 // Fetch all outpasses
 async function fetchOutpasses() {
-  const res = await fetch(`http://localhost:3000/student/outpasses?email=${email}`);
+  const res = await fetch(`${API_URL}/student/outpasses?email=${encodeURIComponent(email)}`);
   const data = await res.json();
   if(!data.success) return;
   const tbody = document.querySelector('#outpass_table tbody');
@@ -79,7 +80,7 @@ async function submitOutpass() {
     return;
   }
 
-  const res = await fetch('http://localhost:3000/student/request-outpass',{
+  const res = await fetch(`${API_URL}/student/request-outpass`,{
     method:'POST',
     headers:{'Content-Type':'application/json'},
     body: JSON.stringify({email, date_from, date_to, reason})

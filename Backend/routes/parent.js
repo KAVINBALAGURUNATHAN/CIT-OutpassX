@@ -54,24 +54,10 @@ router.put('/requests/:id', async (req, res) => {
 
     if (!outpasses.length) return res.status(404).json({ success: false, message: 'Outpass not found' });
 
-    const parentEmail = outpasses[0].parent_email;
-
-    // Verify OTP from otp_sessions
-    const [otpRows] = await pool.query(
-      `SELECT * FROM otp_sessions
-       WHERE email = ? AND role = 'PARENT'
-       ORDER BY created_at DESC
-       LIMIT 1`,
-      [parentEmail]
-    );
-
-    if (!otpRows.length) return res.status(400).json({ success: false, message: 'OTP not found' });
-
-    const latestOtp = otpRows[0].otp;
-    const createdAt = new Date(otpRows[0].created_at);
-
-    if ((new Date() - createdAt) / 60000 > 5) return res.status(400).json({ success: false, message: 'OTP expired' });
-    if (parseInt(otp) !== latestOtp) return res.status(400).json({ success: false, message: 'Invalid OTP' });
+    // Verify the OTP that was emailed to the parent when the request was submitted
+    if (outpasses[0].status !== 'PENDING_PARENT')
+      return res.status(400).json({ success: false, message: 'Request already processed' });
+    if (parseInt(otp) !== outpasses[0].otp) return res.status(400).json({ success: false, message: 'Invalid OTP' });
 
     // Update approval and status
     const newStatus = approve ? 'PENDING_ADVISOR' : 'REJECTED';
@@ -83,7 +69,7 @@ router.put('/requests/:id', async (req, res) => {
 
     // Return updated outpass
     const [updated] = await pool.query(`SELECT * FROM outpasses WHERE id = ?`, [id]);
-    res.json({ success: true, outpass: updated[0] });
+    res.json({ success: true, outpass: updated[0], message: approve ? 'Approved' : 'Rejected' });
 
   } catch (err) {
     console.error(err);

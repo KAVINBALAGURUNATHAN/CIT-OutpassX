@@ -69,12 +69,13 @@
   </tbody>
 </table>
 
+<script src="config.js"></script>
 <script>
 const email = new URLSearchParams(window.location.search).get('email');
 
 async function fetchRequests() {
   try {
-    const res = await fetch(`http://localhost:3000/advisor/requests?email=${email}`);
+    const res = await fetch(`${API_URL}/advisor/requests?email=${encodeURIComponent(email)}`);
     const data = await res.json();
     const tbody = document.querySelector('#requests_table tbody');
     tbody.innerHTML = '';
@@ -109,7 +110,7 @@ async function fetchRequests() {
 
 async function approve(id, approve) {
   try {
-    const res = await fetch(`http://localhost:3000/advisor/requests/${id}`, {
+    const res = await fetch(`${API_URL}/advisor/requests/${id}`, {
       method: 'PUT',
       headers: { 'Content-Type': 'application/json' },
       body: JSON.stringify({ approve })

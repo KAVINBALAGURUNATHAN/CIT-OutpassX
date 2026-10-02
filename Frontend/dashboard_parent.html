@@ -70,13 +70,14 @@
   </tbody>
 </table>
 
+<script src="config.js"></script>
 <script>
 const email = new URLSearchParams(window.location.search).get('email');
 
 async function fetchRequests() {
   try {
-    const res = await fetch(`http://localhost:3000/parent/requests?email=${email}`);
-    const data = await res.json();
+    const res = await fetch(`${API_URL}/parent/requests?email=${encodeURIComponent(email)}`);
+    const { requests: data = [] } = await res.json();
     const tbody = document.querySelector('#requests_table tbody');
     tbody.innerHTML = '';
 
@@ -93,7 +94,7 @@ async function fetchRequests() {
         <td>${r.date_from}</td>
         <td>${r.date_to}</td>
         <td>${r.reason}</td>
-        <td>${r.parent_approval || 'Pending'}</td>
+        <td>${r.parent_approval === null ? 'Pending' : (r.parent_approval ? 'Approved' : 'Rejected')}</td>
         <td>
           <button class="approve" onclick="approve(${r.id}, true)">Approve</button>
           <button class="reject" onclick="approve(${r.id}, false)">Reject</button>
@@ -113,7 +114,7 @@ async function approve(id, approve) {
   if (!otp) return;
 
   try {
-    const res = await fetch(`http://localhost:3000/parent/requests/${id}`, {
+    const res = await fetch(`${API_URL}/parent/requests/${id}`, {
       method: 'PUT',
       headers: {'Content-Type': 'application/json'},
       body: JSON.stringify({ approve, otp })

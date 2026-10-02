@@ -61,6 +61,7 @@
   <p id="message"></p>
 </div>
 
+<script src="config.js"></script>
 <script>
 const messageEl = document.getElementById('message');
 
@@ -76,7 +77,7 @@ async function sendOtp() {
   if (!email) { showMessage('Please enter your email'); return; }
 
   try {
-    const res = await fetch('http://localhost:3000/auth/send-otp', {
+    const res = await fetch(`${API_URL}/auth/send-otp`, {
       method: 'POST',
       headers: {'Content-Type':'application/json'},
       body: JSON.stringify({ email, role })
@@ -103,7 +104,7 @@ async function verifyOtp() {
   if (!otp) { showMessage('Please enter the OTP'); return; }
 
   try {
-    const res = await fetch('http://localhost:3000/auth/verify-otp', {
+    const res = await fetch(`${API_URL}/auth/verify-otp`, {
       method: 'POST',
       headers: {'Content-Type':'application/json'},
       body: JSON.stringify({ email, otp, role })

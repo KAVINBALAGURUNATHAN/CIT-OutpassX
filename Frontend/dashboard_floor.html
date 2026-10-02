@@ -87,15 +87,18 @@
 
   <button id="bulkApprove">Bulk Approve All</button>
 
-  <script>
-    const floorInchargeEmail = localStorage.getItem('floor_incharge_email');
+  <script src="config.js"></script>
+<script>
+    const floorInchargeEmail = new URLSearchParams(window.location.search).get('email');
+    let currentIds = [];
 
     async function loadRequests() {
       try {
-        const res = await fetch(`http://localhost:3000/floor-incharge/requests?email=${floorInchargeEmail}`);
+        const res = await fetch(`${API_URL}/floor/requests?email=${encodeURIComponent(floorInchargeEmail)}`);
         const requests = await res.json();
         const tbody = document.querySelector("#outpassTable tbody");
         tbody.innerHTML = '';
+        currentIds = requests.filter(r => r.floor_incharge_approval === null).map(r => r.id);
 
         if(requests.length === 0) {
           tbody.innerHTML = `<tr class="empty-row"><td colspan="8">No requests available</td></tr>`;
@@ -126,7 +129,7 @@
 
     async function updateRequest(id, approve) {
       try {
-        const res = await fetch(`http://localhost:3000/floor-incharge/requests/${id}`, {
+        const res = await fetch(`${API_URL}/floor/requests/${id}`, {
           method: 'PUT',
           headers: { 'Content-Type': 'application/json' },
           body: JSON.stringify({ approve })
@@ -145,7 +148,12 @@
 
     document.getElementById('bulkApprove').addEventListener('click', async () => {
       try {
-        const res = await fetch(`http://localhost:3000/floor-incharge/bulk-approve?email=${floorInchargeEmail}`, { method: 'PUT' });
+        if (!currentIds.length) return alert('No pending requests');
+        const res = await fetch(`${API_URL}/floor/requests/bulk`, {
+          method: 'PUT',
+          headers: { 'Content-Type': 'application/json' },
+          body: JSON.stringify({ ids: currentIds })
+        });
         const data = await res.json();
         if(data.success) {
           alert('All requests approved!');

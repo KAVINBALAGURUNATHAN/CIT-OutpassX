@@ -49,13 +49,14 @@
 
 <button id="bulkApprove">Bulk Approve Selected</button>
 
+<script src="config.js"></script>
 <script>
 const tableBody = document.getElementById("tableBody");
 const advisorFilter = document.getElementById("advisorFilter");
 
 async function loadAdvisors() {
   try {
-    const res = await fetch('http://localhost:3000/hod/advisors');
+    const res = await fetch(`${API_URL}/hod/advisors`);
     const advisors = await res.json();
     advisors.forEach(a => {
       const opt = document.createElement("option");
@@ -71,7 +72,7 @@ async function loadAdvisors() {
 async function loadRequests(advisorId = "") {
   tableBody.innerHTML = `<tr><td colspan="7" class="empty">Loading requests...</td></tr>`;
   try {
-    const res = await fetch(`http://localhost:3000/hod/requests?advisorId=${advisorId}`);
+    const res = await fetch(`${API_URL}/hod/requests?advisorId=${advisorId}`);
     const data = await res.json();
     tableBody.innerHTML = "";
     if (!data.length) {
@@ -102,7 +103,7 @@ async function loadRequests(advisorId = "") {
 
 async function approveRequest(id, approve) {
   try {
-    const res = await fetch(`http://localhost:3000/hod/requests/${id}`, {
+    const res = await fetch(`${API_URL}/hod/requests/${id}`, {
       method: 'PUT',
       headers: { 'Content-Type': 'application/json' },
       body: JSON.stringify({ approve })
@@ -119,7 +120,7 @@ document.getElementById("bulkApprove").addEventListener("click", async () => {
   const selected = Array.from(document.querySelectorAll(".selectRow:checked")).map(cb => cb.dataset.id);
   if (!selected.length) return alert("No requests selected for bulk approve");
   try {
-    const res = await fetch('http://localhost:3000/hod/requests/bulk-approve', {
+    const res = await fetch(`${API_URL}/hod/requests/bulk`, {
       method: 'PUT',
       headers: { 'Content-Type': 'application/json' },
       body: JSON.stringify({ ids: selected })

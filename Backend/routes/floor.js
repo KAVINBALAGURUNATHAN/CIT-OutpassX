@@ -4,17 +4,20 @@ const pool = require('../db');
 
 // GET requests for this floor incharge
 router.get('/requests', async (req, res) => {
-  const { floor } = req.query; // floor incharge's floor
-  if (!floor) return res.status(400).json({ message: 'Floor required' });
+  const { email } = req.query;
+  if (!email) return res.status(400).json({ message: 'Email required' });
 
   try {
+    const [incharges] = await pool.query(`SELECT hostel, floor FROM floor_incharges WHERE email = ?`, [email]);
+    if (!incharges.length) return res.json([]);
+
     const [requests] = await pool.query(
-      `SELECT o.*, s.name AS student_name, s.hostel, s.floor
+      `SELECT o.*, s.name AS student_name, s.register_no, s.hostel, s.floor
        FROM outpasses o
        JOIN students s ON o.student_id = s.id
-       WHERE o.hod_approval = 1 AND s.floor = ?
+       WHERE o.hod_approval = 1 AND s.hostel = ? AND s.floor = ?
        ORDER BY o.created_at DESC`,
-      [floor]
+      [incharges[0].hostel, incharges[0].floor]
     );
 
     res.json(requests);
@@ -22,6 +25,25 @@ router.get('/requests', async (req, res) => {
   } catch (err) {
     console.error(err);
     res.status(500).json({ message: 'Server error' });
+  }
+});
+
+// Bulk approve multiple requests
+router.put('/requests/bulk', async (req, res) => {
+  const { ids } = req.body; // array of outpass IDs
+  if (!ids || !ids.length) return res.status(400).json({ message: 'IDs required' });
+
+  try {
+    await pool.query(
+      `UPDATE outpasses SET floor_incharge_approval = 1, status = 'APPROVED' WHERE id IN (?) AND hod_approval = 1`,
+      [ids]
+    );
+
+    res.json({ success: true, message: 'Bulk approval done' });
+
+  } catch (err) {
+    console.error(err);
+    res.status(500).json({ success: false, message: 'Server error' });
   }
 });
 
@@ -42,25 +64,6 @@ router.put('/requests/:id', async (req, res) => {
 
     const [updated] = await pool.query(`SELECT * FROM outpasses WHERE id = ?`, [id]);
     res.json({ success: true, request: updated[0], message: approve ? 'Approved' : 'Rejected' });
-
-  } catch (err) {
-    console.error(err);
-    res.status(500).json({ success: false, message: 'Server error' });
-  }
-});
-
-// Bulk approve multiple requests
-router.put('/requests/bulk', async (req, res) => {
-  const { ids } = req.body; // array of outpass IDs
-  if (!ids || !ids.length) return res.status(400).json({ message: 'IDs required' });
-
-  try {
-    await pool.query(
-      `UPDATE outpasses SET floor_incharge_approval = 1, status = 'APPROVED' WHERE id IN (?)`,
-      [ids]
-    );
-
-    res.json({ success: true, message: 'Bulk approval done' });
 
   } catch (err) {
     console.error(err);
